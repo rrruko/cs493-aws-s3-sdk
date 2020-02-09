@@ -73,12 +73,11 @@ class App():
     source_obj = self.bucket_name + '/' + path
     print(source_obj)
     s3 = boto3.resource('s3')
-    s3.Object(self.bucket_name, new_name).copy_from(CopySource=source_obj)
+    s3.Object(self.bucket_name, new_path).copy_from(CopySource=source_obj)
     s3.Object(self.bucket_name, path).delete()
 
 def main():
   arguments = docopt(__doc__)
-  print(arguments)
   app = App(arguments['<bucket_name>'], arguments['--profile'])
   if arguments['upload_album']:
     app.upload_album(arguments['<path>'], arguments['<album_name>'], arguments['<artist_name>'])
