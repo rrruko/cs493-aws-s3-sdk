@@ -37,15 +37,15 @@ class App():
       self.profile = profile
     else:
       self.profile = 'default'
+    session = boto3.Session(profile_name=self.profile)
+    self.s3 = session.resource('s3')
 
   def upload_song(self, artist_name, album_name, song_name, song_path):
     with open(song_path, 'rb') as song_bytes:
       data = song_bytes.read()
-      session = boto3.Session(profile_name=self.profile)
-      s3 = session.resource('s3')
       path = artist_name + '/' + album_name + '/' + song_name
       self.logger.log(f'uploading {song_name} at {path}')
-      s3.Bucket(self.bucket_name).put_object(Key=path, Body=data)
+      self.s3.Bucket(self.bucket_name).put_object(Key=path, Body=data)
 
   def upload_album(self, path, album_name, artist_name):
     self.logger.log(f'album: {album_name}')
@@ -72,9 +72,8 @@ class App():
     new_path = artist_name + '/' + album_name + '/' + new_name
     source_obj = self.bucket_name + '/' + path
     print(source_obj)
-    s3 = boto3.resource('s3')
-    s3.Object(self.bucket_name, new_path).copy_from(CopySource=source_obj)
-    s3.Object(self.bucket_name, path).delete()
+    self.s3.Object(self.bucket_name, new_path).copy_from(CopySource=source_obj)
+    self.s3.Object(self.bucket_name, path).delete()
 
 def main():
   arguments = docopt(__doc__)
