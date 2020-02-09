@@ -2,6 +2,7 @@
 
 Usage:
   app.py upload_song <bucket_name> <path> <song_name> <album_name> <artist_name>
+  app.py rename_song <bucket_name> <new_name> <song_name> <album_name> <artist_name>
   app.py upload_album <bucket_name> <path> <album_name> <artist_name>
   app.py upload_artist <bucket_name> <path> <name>
 
@@ -60,6 +61,15 @@ class App():
       self.upload_album(path + '/' + album, album, name)
       self.logger.outdent()
 
+  def rename_song(self, new_name, song_name, album_name, artist_name):
+    path = artist_name + '/' + album_name + '/' + song_name
+    new_path = artist_name + '/' + album_name + '/' + new_name
+    source_obj = self.bucket_name + '/' + path
+    print(source_obj)
+    s3 = boto3.resource('s3')
+    s3.Object(self.bucket_name, new_name).copy_from(CopySource=source_obj)
+    s3.Object(self.bucket_name, path).delete()
+
 def main():
   arguments = docopt(__doc__)
   print(arguments)
@@ -74,6 +84,13 @@ def main():
       album_name=arguments['<album_name>'],
       song_name=arguments['<song_name>'],
       song_path=arguments['<path>']
+    )
+  elif arguments['rename_song']:
+    app.rename_song(
+      new_name=arguments['<new_name>'],
+      song_name=arguments['<song_name>'],
+      album_name=arguments['<album_name>'],
+      artist_name=arguments['<artist_name>']
     )
 
 if __name__ == '__main__':
