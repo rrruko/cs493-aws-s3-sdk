@@ -1,6 +1,7 @@
 """AWS album upload thingy.
 
 Usage:
+  app.py upload_song <bucket_name> <path> <song_name> <album_name> <artist_name>
   app.py upload_album <bucket_name> <path> <album_name> <artist_name>
   app.py upload_artist <bucket_name> <path> <name>
 
@@ -31,11 +32,13 @@ class App():
     self.bucket_name = bucket_name
     self.logger = Logger()
 
-  def upload_song(self, artist_name, album_name, song_name, data):
-    s3 = boto3.resource('s3')
-    path = artist_name + '/' + album_name + '/' + song_name
-    self.logger.log(f'uploading {song_name} at {path}')
-    s3.Bucket(self.bucket_name).put_object(Key=path, Body=data)
+  def upload_song(self, artist_name, album_name, song_name, song_path):
+    with open(song_path, 'rb') as song_bytes:
+      data = song_bytes.read()
+      s3 = boto3.resource('s3')
+      path = artist_name + '/' + album_name + '/' + song_name
+      self.logger.log(f'uploading {song_name} at {path}')
+      s3.Bucket(self.bucket_name).put_object(Key=path, Body=data)
 
   def upload_album(self, path, album_name, artist_name):
     self.logger.log(f'album: {album_name}')
@@ -43,12 +46,11 @@ class App():
       self.logger.indent()
       song_path = path + '/' + song
       if os.path.isfile(song_path):
-        with open(song_path, 'rb') as song_bytes:
-          self.upload_song(
-            artist_name=artist_name,
-            album_name=album_name,
-            song_name=song,
-            data=song_bytes.read())
+        self.upload_song(
+          artist_name=artist_name,
+          album_name=album_name,
+          song_name=song,
+          song_path=song_path)
       self.logger.outdent()
 
   def upload_artist(self, path, name):
@@ -66,6 +68,13 @@ def main():
     app.upload_album(arguments['<path>'], arguments['<album_name>'], arguments['<artist_name>'])
   elif arguments['upload_artist']:
     app.upload_artist(arguments['<path>'], arguments['<name>'])
+  elif arguments['upload_song']:
+    app.upload_song(
+      artist_name=arguments['<artist_name>'],
+      album_name=arguments['<album_name>'],
+      song_name=arguments['<song_name>'],
+      song_path=arguments['<path>']
+    )
 
 if __name__ == '__main__':
   main()
