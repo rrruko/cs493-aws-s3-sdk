@@ -1,13 +1,14 @@
 """AWS album upload thingy.
 
 Usage:
-  app.py upload_song <bucket_name> <path> <song_name> <album_name> <artist_name>
-  app.py rename_song <bucket_name> <new_name> <song_name> <album_name> <artist_name>
-  app.py upload_album <bucket_name> <path> <album_name> <artist_name>
-  app.py upload_artist <bucket_name> <path> <name>
+  app.py upload_song <bucket_name> <path> <song_name> <album_name> <artist_name> [--profile=<profile_name>]
+  app.py rename_song <bucket_name> <new_name> <song_name> <album_name> <artist_name> [--profile=<profile_name>]
+  app.py upload_album <bucket_name> <path> <album_name> <artist_name> [--profile=<profile_name>]
+  app.py upload_artist <bucket_name> <path> <name> [--profile=<profile_name>]
 
 Options:
-  -h --help  Show this screen.
+  -h --help                 Show this screen.
+  --profile=<profile_name>  Use a profile besides the default one.
 """
 
 import boto3
@@ -29,14 +30,19 @@ class Logger():
     self.indent_level = max(self.indent_level, 0)
 
 class App():
-  def __init__(self, bucket_name):
+  def __init__(self, bucket_name, profile):
     self.bucket_name = bucket_name
     self.logger = Logger()
+    if profile:
+      self.profile = profile
+    else:
+      self.profile = 'default'
 
   def upload_song(self, artist_name, album_name, song_name, song_path):
     with open(song_path, 'rb') as song_bytes:
       data = song_bytes.read()
-      s3 = boto3.resource('s3')
+      session = boto3.Session(profile_name=self.profile)
+      s3 = session.resource('s3')
       path = artist_name + '/' + album_name + '/' + song_name
       self.logger.log(f'uploading {song_name} at {path}')
       s3.Bucket(self.bucket_name).put_object(Key=path, Body=data)
@@ -73,7 +79,7 @@ class App():
 def main():
   arguments = docopt(__doc__)
   print(arguments)
-  app = App(arguments['<bucket_name>'])
+  app = App(arguments['<bucket_name>'], arguments['--profile'])
   if arguments['upload_album']:
     app.upload_album(arguments['<path>'], arguments['<album_name>'], arguments['<artist_name>'])
   elif arguments['upload_artist']:
