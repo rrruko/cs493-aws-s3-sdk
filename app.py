@@ -56,6 +56,19 @@ class App():
           'SK': song_name
         }
       )
+      presigned = boto3.client('s3').generate_presigned_url(
+        'get_object',
+        Params={'Bucket': self.bucket_name, 'Key': path},
+        ExpiresIn=315360000 # Ten years from now
+      )
+      self.ddb.put_item(
+        TableName='music',
+        Item={
+          'PK': song_name,
+          'SK': presigned
+        }
+      )
+
 
   def upload_album(self, path, album_name, artist_name):
     self.logger.log(f'album: {album_name}')
